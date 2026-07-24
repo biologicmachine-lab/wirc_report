@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weld Issue Root Cause Report</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --steel-900:#1b2126;
+    --steel-700:#2e3941;
+    --steel-500:#5a6b74;
+    --steel-300:#9fb0b8;
+    --steel-100:#e7edef;
+    --paper:#f7f5f0;
+    --caution:#c8461b;
+    --ok:#3a7d5c;
+    --line:#c9cfd1;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--steel-900);
+    font-family:'Courier New', ui-monospace, Consolas, monospace;
+    color:var(--steel-900);
+    min-height:100vh;
+    padding:32px 16px 80px;
+  }
+  .sheet{
+    max-width:760px;
+    margin:0 auto;
+    background:var(--paper);
+    border:1px solid var(--steel-500);
+    box-shadow:0 20px 50px rgba(0,0,0,.4);
+  }
+  .band{
+    background:var(--steel-900);
+    color:var(--steel-100);
+    padding:18px 24px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    border-bottom:4px solid var(--caution);
+  }
+  .band h1{
+    margin:0;
+    font-size:1.15rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+  }
+  .band .tag{
+    font-size:.7rem;
+    color:var(--steel-300);
+    letter-spacing:.15em;
+  }
+  .meta-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:1px;
+    background:var(--line);
+    border-bottom:1px solid var(--line);
+  }
+  .meta-row .cell{
+    background:var(--steel-100);
+    padding:12px 20px;
+  }
+  form{padding:24px;}
+  .field{margin-bottom:22px;}
+  label{
+    display:block;
+    font-size:.72rem;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--steel-500);
+    margin-bottom:6px;
+    font-weight:700;
+  }
+  label .num{
+    display:inline-block;
+    width:20px;
+    color:var(--caution);
+  }
+  input[type=text], input[type=date], textarea{
+    width:95%;
+    font-family:inherit;
+    font-size:.95rem;
+    padding:10px 12px;
+    border:1px solid var(--steel-500);
+    background:#fff;
+    color:var(--steel-900);
+  }
+  textarea{resize:vertical;min-height:70px;line-height:1.4;}
+  input:focus, textarea:focus{
+    outline:2px solid var(--caution);
+    outline-offset:1px;
+  }
+  fieldset{
+    border:1px solid var(--steel-500);
+    padding:14px 16px 16px;
+    margin:0;
+  }
+  legend{
+    font-size:.72rem;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--steel-500);
+    font-weight:700;
+    padding:0 6px;
+  }
+  .radio-row{display:flex;gap:24px;margin-bottom:12px;}
+  .radio-row label{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    text-transform:none;
+    letter-spacing:0;
+    font-weight:400;
+    font-size:.9rem;
+    color:var(--steel-900);
+    margin-bottom:0;
+    cursor:pointer;
+  }
+  .radio-row input{width:auto;margin:0;}
+  #followupBlock{display:none;margin-top:14px;border-top:1px dashed var(--line);padding-top:14px;}
+  .actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:12px;
+    padding:0 24px 24px;
+  }
+  button{
+    font-family:inherit;
+    font-size:.85rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    padding:12px 22px;
+    border:none;
+    cursor:pointer;
+    background:var(--caution);
+    color:#fff;
+    font-weight:700;
+  }
+  button:hover{background:#a83a15;}
+  .hint{
+    font-size:.72rem;
+    color:var(--steel-500);
+    margin-top:6px;
+    font-style:italic;
+  }
+  @media (max-width:600px){
+    .meta-row{grid-template-columns:1fr;}
+    .band{flex-direction:column;align-items:flex-start;gap:6px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+  <div class="band">
+    <h1>Weld Issue — Root Cause Report</h1>
+    <span class="tag">Post-Review</span>
+  </div>
+
+  <div class="meta-row">
+    <div class="cell">
+      <label>Technician</label>
+      <input type="text" id="techName" placeholder="Name">
+    </div>
+    <div class="cell">
+      <label>Date</label>
+      <input type="date" id="reportDate">
+    </div>
+  </div>
+
+  <form id="reportForm">
+    <div class="field">
+      <label><span class="num">01</span>What are the issue(s)?</label>
+      <textarea id="issues" placeholder="Describe the defect(s) observed — porosity, undercut, cracking, spatter, etc."></textarea>
+    </div>
+
+    <div class="field">
+      <label><span class="num">02</span>What is the model?</label>
+      <input type="text" id="model" placeholder="Part / model number">
+    </div>
+
+    <div class="field">
+      <label><span class="num">03</span>What system was it run in?</label>
+      <input type="text" id="system" placeholder="Cell, line, or station ID">
+    </div>
+
+    <div class="field">
+      <label><span class="num">04</span>What does the surrounding area show?</label>
+      <textarea id="surroundings" placeholder="Look for clues pointing toward root cause — fixture wear, spatter buildup, contamination, misalignment, etc."></textarea>
+    </div>
+
+    <div class="field">
+      <fieldset>
+        <label><span class="num">05</span>Is the issue isolated to one weld or area?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="isolated" value="yes" id="isoYes"> Yes</label>
+          <label><input type="radio" name="isolated" value="no" id="isoNo"> No</label>
+        </div>
+        <div id="followupBlock">
+          <label>When did the issue begin?</label>
+          <input type="text" id="beganWhen" placeholder="Date, shift, batch, or event it started">
+          <div class="hint" style="margin-bottom:10px;">Details the area where the issue started.</div>
+          <label>Clues at onset point</label>
+          <textarea id="onsetClues" placeholder="What changed at that point — tooling swap, program edit, material lot, operator change, etc."></textarea>
+        </div>
+      </fieldset>
+    </div>
+  </form>
+
+  <div class="actions">
+    <button type="button" id="downloadBtn">Download PDF</button>
+  </div>
+</div>
+
+<script>
+  const isoYes = document.getElementById('isoYes');
+  const isoNo = document.getElementById('isoNo');
+  const followup = document.getElementById('followupBlock');
+
+  function toggleFollowup(){
+    followup.style.display = isoNo.checked ? 'block' : 'none';
+  }
+  isoYes.addEventListener('change', toggleFollowup);
+  isoNo.addEventListener('change', toggleFollowup);
+
+  document.getElementById('downloadBtn').addEventListener('click', () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+    const margin = 56;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const usableWidth = pageWidth - margin * 2;
+    let y = 60;
+
+    const get = id => document.getElementById(id).value.trim();
+    const isolated = isoYes.checked ? 'Yes' : (isoNo.checked ? 'No' : '');
+
+    // Header band
+    doc.setFillColor(27, 33, 38);
+    doc.rect(0, 0, pageWidth, 70, 'F');
+    doc.setDrawColor(200, 70, 27);
+    doc.setLineWidth(3);
+    doc.line(0, 70, pageWidth, 70);
+    doc.setTextColor(255,255,255);
+    doc.setFont('courier', 'bold');
+    doc.setFontSize(15);
+    doc.text('WELD ISSUE — ROOT CAUSE REPORT', margin, 40);
+    doc.setFontSize(9);
+    doc.setTextColor(159,176,184);
+    doc.text('POST-INTERVIEW REVIEW', margin, 56);
+
+    y = 100;
+    doc.setTextColor(27,33,38);
+
+    // Meta row
+    doc.setFont('courier','bold');
+    doc.setFontSize(9);
+    doc.setTextColor(90,107,116);
+    doc.text('TECHNICIAN INTERVIEWED', margin, y);
+    doc.text('DATE', margin + usableWidth/2, y);
+    y += 14;
+    doc.setFont('courier','normal');
+    doc.setFontSize(11);
+    doc.setTextColor(27,33,38);
+    doc.text(get('techName') || '—', margin, y);
+    doc.text(get('reportDate') || '—', margin + usableWidth/2, y);
+    y += 20;
+    doc.setDrawColor(201,207,209);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 26;
+
+    function section(numLabel, title, bodyText){
+      doc.setFont('courier','bold');
+      doc.setFontSize(9);
+      doc.setTextColor(200,70,27);
+      doc.text(numLabel, margin, y);
+      doc.setTextColor(90,107,116);
+      doc.text(title, margin + 22, y);
+      y += 16;
+      doc.setFont('courier','normal');
+      doc.setFontSize(10.5);
+      doc.setTextColor(27,33,38);
+      const lines = doc.splitTextToSize(bodyText || '—', usableWidth);
+      lines.forEach(line => {
+        if (y > 740){ doc.addPage(); y = 60; }
+        doc.text(line, margin, y);
+        y += 14;
+      });
+      y += 16;
+    }
+
+    section('01', 'WHAT ARE THE ISSUE(S)?', get('issues'));
+    section('02', 'WHAT IS THE MODEL?', get('model'));
+    section('03', 'WHAT SYSTEM WAS IT RUN IN?', get('system'));
+    section('04', 'SURROUNDING AREA / ROOT CAUSE CLUES', get('surroundings'));
+    section('05', 'ISOLATED TO ONE WELD OR AREA?', isolated);
+
+    if (isolated === 'No') {
+      section('', 'WHEN DID THE ISSUE BEGIN?', get('beganWhen'));
+      section('', 'CLUES AT ONSET POINT', get('onsetClues'));
+    }
+
+    const techPart = get('techName') ? get('techName').replace(/\s+/g,'_') : 'report';
+    const datePart = get('reportDate') || new Date().toISOString().slice(0,10);
+    doc.save(`weld-report_${techPart}_${datePart}.pdf`);
+  });
+</script>
+
+</body>
+</html>
