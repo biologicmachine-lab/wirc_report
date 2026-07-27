@@ -200,12 +200,11 @@
           <option value="180">180</option>
           <option value="200">200</option>
           <option value="210">210</option>
-          <option value="250">250</option>
+          <option value="230">230</option>
           <option value="260">260</option>
           <option value="300">300</option>
           <option value="350">350</option>
           <option value="380">380</option>
-          <option value="470">470</option>
           <option value="510">510</option>
         </select>
 
@@ -216,12 +215,75 @@
 
         <input type="text" id="seqNum" placeholder="Sequence #">
       </div>
-      <div id="lngHint" class="hint">Note: LNG variant is only available for models 130, 160, 180, 210, 250, 300, 350, 470, and 510.</div>
     </div>
 
     <div class="field">
       <label><span class="num">03</span>What system was it run in?</label>
-      <input type="text" id="system" placeholder="Cell, line, or station ID">
+      <select id="system">
+        <option value="">-- Department --</option>
+        <option value="Arm">Arm</option>
+        <option value="Boom">Boom</option>
+        <option value="Main Frame">Main Frame</option>
+        <option value="Track Frame">Track Frame</option>
+      </select>
+      <div id="armCellBlock" class="conditional-block">
+        <label style="margin-top:14px;">Cell</label>
+        <select id="armCell">
+          <option value="">-- Cell --</option>
+          <option value="A5">A5</option>
+          <option value="A6">A6</option>
+          <option value="A7">A7</option>
+          <option value="A8">A8</option>
+          <option value="A9">A9</option>
+        </select>
+      </div>
+      <div id="boomCellBlock" class="conditional-block">
+        <label style="margin-top:14px;">Cell</label>
+        <select id="boomCell">
+          <option value="">-- Cell --</option>
+          <option value="B1">B1</option>
+          <option value="B2">B2</option>
+          <option value="B9">B9</option>
+          <option value="B10">B10</option>
+          <option value="B11">B11</option>
+          <option value="B12">B12</option>
+          <option value="B13">B13</option>
+          <option value="B15">B15</option>
+          <option value="B16">B16</option>
+          <option value="B17">B17</option>
+        </select>
+      </div>
+      <div id="mainFrameCellBlock" class="conditional-block">
+        <label style="margin-top:14px;">Cell</label>
+        <select id="mainFrameCell">
+          <option value="">-- Cell --</option>
+          <option value="M1">M1</option>
+          <option value="M2">M2</option>
+          <option value="M7">M7</option>
+          <option value="M10">M10</option>
+          <option value="M12">M12</option>
+          <option value="MX">MX</option>
+          <option value="MXI">MXI</option>
+        </select>
+      </div>
+      <div id="trackFrameCellBlock" class="conditional-block">
+        <label style="margin-top:14px;">Cell</label>
+        <select id="trackFrameCell">
+          <option value="">-- Cell --</option>
+          <option value="T1">T1</option>
+          <option value="T2">T2</option>
+          <option value="T3">T3</option>
+          <option value="T4">T4</option>
+          <option value="T19">T19</option>
+          <option value="T20">T20</option>
+          <option value="T21">T21</option>
+          <option value="T22">T22</option>
+          <option value="T23">T23</option>
+          <option value="T24">T24</option>
+          <option value="T25">T25</option>
+          <option value="T26">T26</option>
+        </select>
+      </div>
     </div>
 
     <!-- Section 04: Follow Up -->
@@ -276,7 +338,7 @@
 
 <script>
   // LNG restriction handling
-  const lngModels = ['130', '160', '180', '210', '250', '300', '350', '470', '510'];
+  const lngModels = ['130', '160', '180', '210', '230', '300', '350', '470', '510'];
   const modelSelect = document.getElementById('model');
   const variantSelect = document.getElementById('variant');
   const optLng = document.getElementById('optLng');
@@ -294,6 +356,26 @@
   }
 
   modelSelect.addEventListener('change', checkVariantSupport);
+
+  // Toggle Cell dropdowns for Arm / Boom
+  const systemSelect = document.getElementById('system');
+  const armCellBlock = document.getElementById('armCellBlock');
+  const boomCellBlock = document.getElementById('boomCellBlock');
+  const mainFrameCellBlock = document.getElementById('mainFrameCellBlock');
+  const trackFrameCellBlock = document.getElementById('trackFrameCellBlock');
+
+  function toggleCellBlocks() {
+    const val = systemSelect.value;
+    armCellBlock.style.display = val === 'Arm' ? 'block' : 'none';
+    boomCellBlock.style.display = val === 'Boom' ? 'block' : 'none';
+    mainFrameCellBlock.style.display = val === 'Main Frame' ? 'block' : 'none';
+    trackFrameCellBlock.style.display = val === 'Track Frame' ? 'block' : 'none';
+    if (val !== 'Arm') document.getElementById('armCell').value = '';
+    if (val !== 'Boom') document.getElementById('boomCell').value = '';
+    if (val !== 'Main Frame') document.getElementById('mainFrameCell').value = '';
+    if (val !== 'Track Frame') document.getElementById('trackFrameCell').value = '';
+  }
+  systemSelect.addEventListener('change', toggleCellBlocks);
 
   // Toggle logic for Follow Up
   const fuYes = document.getElementById('fuYes');
@@ -366,7 +448,7 @@
     doc.setFont('courier', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(90, 107, 116);
-    doc.text('TECHNICIAN INTERVIEWED', margin, y);
+    doc.text('TECHNICIAN', margin, y);
     doc.text('DATE', margin + usableWidth / 2, y);
     y += 14;
     doc.setFont('courier', 'normal');
@@ -401,7 +483,17 @@
 
     section('01', 'WHAT ARE THE ISSUE(S)?', get('issues'));
     section('02', 'MODEL DETAILS', combinedModel);
-    section('03', 'WHAT SYSTEM WAS IT RUN IN?', get('system'));
+    const systemVal = get('system');
+    const armCellVal = get('armCell');
+    const boomCellVal = get('boomCell');
+    const mainFrameCellVal = get('mainFrameCell');
+    const trackFrameCellVal = get('trackFrameCell');
+    let systemDisplay = systemVal || '—';
+    if (systemVal === 'Arm' && armCellVal) systemDisplay = `Arm — Cell ${armCellVal}`;
+    if (systemVal === 'Boom' && boomCellVal) systemDisplay = `Boom — Cell ${boomCellVal}`;
+    if (systemVal === 'Main Frame' && mainFrameCellVal) systemDisplay = `Main Frame — Cell ${mainFrameCellVal}`;
+    if (systemVal === 'Track Frame' && trackFrameCellVal) systemDisplay = `Track Frame — Cell ${trackFrameCellVal}`;
+    section('03', 'WHAT SYSTEM WAS IT RUN IN?', systemDisplay);
     
     section('04', 'NEEDS FOLLOW UP?', followupNeeded);
     if (followupNeeded === 'Yes') {
