@@ -633,6 +633,7 @@
       const modelPart = modelVal ? `${modelVal}-${variantVal}` : 'model';
       const cellVal = armCellVal || boomCellVal || mainFrameCellVal || trackFrameCellVal;
       const systemPart = systemVal ? (systemVal.replace(/\s+/g, '') + (cellVal ? `-${cellVal}` : '')) : 'system';
+      const sequencePart = seqVal ? '${seqVal}' : 'Seq';
       const datePart = get('reportDate') || new Date().toISOString().slice(0, 10);
       doc.save(`weld-report_${modelPart}_${systemPart}_${datePart}.pdf`);
     });
