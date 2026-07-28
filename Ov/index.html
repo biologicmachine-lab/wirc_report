@@ -65,7 +65,7 @@
 
     .meta-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 1px;
       background: var(--line);
       border-bottom: 1px solid var(--line);
@@ -247,6 +247,15 @@
         <input type="text" id="techName" placeholder="Name">
       </div>
       <div class="cell">
+        <label>Shift</label>
+        <select id="shift">
+          <option value="">-- Shift --</option>
+          <option value="1st">1st</option>
+          <option value="2nd">2nd</option>
+          <option value="3rd">3rd</option>
+        </select>
+      </div>
+      <div class="cell">
         <label>Date</label>
         <input type="date" id="reportDate">
       </div>
@@ -255,41 +264,13 @@
     <form id="reportForm">
       <div class="field">
         <label><span class="num">01</span>What are the issue(s)?</label>
+        <input type="text" id="weldNum" placeholder="Weld #" style="width:95%;margin-bottom:8px;">
         <textarea id="issues"
           placeholder="Describe the defect(s) observed — porosity, undercut, cracking, spatter, etc."></textarea>
       </div>
 
-      <!-- Section 02: Model, Variant, and Sequence -->
       <div class="field">
-        <label><span class="num">02</span>Model Details</label>
-        <div class="inline-inputs">
-          <select id="model">
-            <option value="">-- Model --</option>
-            <option value="130">130</option>
-            <option value="145">145</option>
-            <option value="160">160</option>
-            <option value="180">180</option>
-            <option value="200">200</option>
-            <option value="210">210</option>
-            <option value="230">230</option>
-            <option value="260">260</option>
-            <option value="300">300</option>
-            <option value="350">350</option>
-            <option value="380">380</option>
-            <option value="510">510</option>
-          </select>
-
-          <select id="variant">
-            <option value="STD">STD</option>
-            <option value="LNG" id="optLng">LNG</option>
-          </select>
-
-          <input type="text" id="seqNum" placeholder="Sequence #">
-        </div>
-      </div>
-
-      <div class="field">
-        <label><span class="num">03</span>What system was it run in?</label>
+        <label><span class="num">02</span>What system was it run in?</label>
         <select id="system">
           <option value="">-- Department --</option>
           <option value="Arm">Arm</option>
@@ -306,6 +287,7 @@
             <option value="A7">A7</option>
             <option value="A8">A8</option>
             <option value="A9">A9</option>
+            <option value="A10">A10</option>
           </select>
         </div>
         <div id="boomCellBlock" class="conditional-block">
@@ -323,6 +305,14 @@
             <option value="B16">B16</option>
             <option value="B17">B17</option>
           </select>
+          <div id="boomRobotBlock" class="conditional-block">
+            <label style="margin-top:14px;">Robot</label>
+            <select id="boomRobot">
+              <option value="">-- Robot --</option>
+              <option value="R1">R1</option>
+              <option value="R2">R2</option>
+            </select>
+          </div>
         </div>
         <div id="mainFrameCellBlock" class="conditional-block">
           <label style="margin-top:14px;">Cell</label>
@@ -357,6 +347,36 @@
         </div>
       </div>
 
+      <!-- Section 03: Model, Variant, and Sequence -->
+      <div class="field">
+        <label><span class="num">03</span>Model Details</label>
+        <div class="inline-inputs">
+          <select id="model">
+            <option value="">-- Model --</option>
+            <option value="130">130</option>
+            <option value="145">145</option>
+            <option value="160">160</option>
+            <option value="200">200</option>
+            <option value="210">210</option>
+            <option value="230">230</option>
+            <option value="260">260</option>
+            <option value="300">300</option>
+            <option value="350">350</option>
+            <option value="380">380</option>
+            <option value="510">510</option>
+          </select>
+
+          <div id="variantBlock" style="display:none">
+            <select id="variant" style="width:100%">
+              <option value="STD">STD</option>
+              <option value="LNG" id="optLng">LNG</option>
+            </select>
+          </div>
+
+          <input type="text" id="seqNum" placeholder="Sequence #">
+        </div>
+      </div>
+
       <!-- Section 04: Follow Up -->
       <div class="field">
         <fieldset>
@@ -366,9 +386,9 @@
             <label><input type="radio" name="followupNeeded" value="no" id="fuNo"> No</label>
           </div>
           <div id="followupDetailsBlock" class="conditional-block">
-            <label>Program Hold Status</label>
+            <label>Program Status</label>
             <div class="radio-row" style="margin-bottom:14px;">
-              <label><input type="radio" name="programHold" value="yes" id="holdYes"> Yes, placed hold</label>
+              <label><input type="radio" name="programHold" value="yes" id="holdYes"> Placed hold</label>
               <label><input type="radio" name="programHold" value="no" id="holdNo"> No hold placed</label>
             </div>
             <label>Follow-Up Details & Action Items</label>
@@ -387,8 +407,8 @@
 
       <!-- Section 06: Isolation & Onset -->
       <div class="field">
+        <label><span class="num">06</span>Is the issue isolated to one weld or area?</label>
         <fieldset>
-          <label><span class="num">06</span>Is the issue isolated to one weld or area?</label>
           <div class="radio-row">
             <label><input type="radio" name="isolated" value="yes" id="isoYes"> Yes</label>
             <label><input type="radio" name="isolated" value="no" id="isoNo"> No</label>
@@ -403,6 +423,12 @@
           </div>
         </fieldset>
       </div>
+
+      <!-- Section 07: Reported By -->
+      <div class="field">
+        <label><span class="num">07</span>Reported by</label>
+        <input type="text" id="reportedBy" placeholder="QA-Technician, Lead-Technician or Operator's name">
+      </div>
     </form>
 
     <div class="actions">
@@ -412,7 +438,7 @@
 
   <script>
     // LNG restriction handling
-    const lngModels = ['130', '160', '180', '210', '230', '300', '350', '470', '510'];
+    const lngModels = ['130', '145', '160', '200', '210', '230', '300', '350', '470', '510'];
     const modelSelect = document.getElementById('model');
     const variantSelect = document.getElementById('variant');
     const optLng = document.getElementById('optLng');
@@ -438,18 +464,40 @@
     const mainFrameCellBlock = document.getElementById('mainFrameCellBlock');
     const trackFrameCellBlock = document.getElementById('trackFrameCellBlock');
 
+    const variantBlock = document.getElementById('variantBlock');
+
     function toggleCellBlocks() {
       const val = systemSelect.value;
       armCellBlock.style.display = val === 'Arm' ? 'block' : 'none';
       boomCellBlock.style.display = val === 'Boom' ? 'block' : 'none';
       mainFrameCellBlock.style.display = val === 'Main Frame' ? 'block' : 'none';
       trackFrameCellBlock.style.display = val === 'Track Frame' ? 'block' : 'none';
-      if (val !== 'Arm') document.getElementById('armCell').value = '';
-      if (val !== 'Boom') document.getElementById('boomCell').value = '';
+      variantBlock.style.display = val === 'Arm' ? 'block' : 'none';
+      if (val !== 'Arm') {
+        document.getElementById('armCell').value = '';
+        variantSelect.value = 'STD';
+        optLng.disabled = true;
+      }
+      if (val !== 'Boom') {
+        document.getElementById('boomCell').value = '';
+        document.getElementById('boomRobot').value = '';
+        document.getElementById('boomRobotBlock').style.display = 'none';
+      }
       if (val !== 'Main Frame') document.getElementById('mainFrameCell').value = '';
       if (val !== 'Track Frame') document.getElementById('trackFrameCell').value = '';
     }
     systemSelect.addEventListener('change', toggleCellBlocks);
+
+    // Toggle Robot dropdown for specific Boom cells
+    const boomCellSelect = document.getElementById('boomCell');
+    const boomRobotBlock = document.getElementById('boomRobotBlock');
+    const boomRobotCells = ['B1', 'B10', 'B15', 'B16'];
+
+    boomCellSelect.addEventListener('change', function () {
+      const show = boomRobotCells.includes(this.value);
+      boomRobotBlock.style.display = show ? 'block' : 'none';
+      if (!show) document.getElementById('boomRobot').value = '';
+    });
 
     // Toggle logic for Follow Up
     const fuYes = document.getElementById('fuYes');
