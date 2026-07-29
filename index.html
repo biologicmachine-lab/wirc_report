@@ -5,7 +5,268 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Weld Issue Root Cause Report</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    :root {
+      --steel-900: #1b2126;
+      --steel-700: #2e3941;
+      --steel-500: #5a6b74;
+      --steel-300: #9fb0b8;
+      --steel-100: #e7edef;
+      --paper: #f7f5f0;
+      --caution: #c8461b;
+      --ok: #3a7d5c;
+      --line: #c9cfd1;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--steel-900);
+      font-family: 'Courier New', ui-monospace, Consolas, monospace;
+      color: var(--steel-900);
+      min-height: 100vh;
+      padding: 32px 16px 80px;
+    }
+
+    .sheet {
+      max-width: 760px;
+      margin: 0 auto;
+      background: var(--paper);
+      border: 1px solid var(--steel-500);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, .4);
+    }
+
+    .band {
+      background: var(--steel-900);
+      color: var(--steel-100);
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 4px solid var(--caution);
+    }
+
+    .band h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .band .tag {
+      font-size: .7rem;
+      color: var(--steel-300);
+      letter-spacing: .15em;
+    }
+
+    .meta-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1px;
+      background: var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .meta-row .cell {
+      background: var(--steel-100);
+      padding: 12px 20px;
+    }
+
+    form {
+      padding: 24px;
+    }
+
+    .field {
+      margin-bottom: 22px;
+    }
+
+    label {
+      display: block;
+      font-size: .72rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--steel-500);
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    label .num {
+      display: inline-block;
+      width: 20px;
+      color: var(--caution);
+    }
+
+    input[type=text],
+    input[type=date],
+    select,
+    textarea {
+      width: 95%;
+      font-family: inherit;
+      font-size: .95rem;
+      padding: 10px 12px;
+      border: 1px solid var(--steel-500);
+      background: #fff;
+      color: var(--steel-900);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 70px;
+      line-height: 1.4;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: 2px solid var(--caution);
+      outline-offset: 1px;
+    }
+
+    .inline-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.5fr;
+      gap: 12px;
+      width: 95%;
+    }
+
+    .inline-inputs select,
+    .inline-inputs input {
+      width: 100%;
+    }
+
+    fieldset {
+      border: 1px solid var(--steel-500);
+      padding: 14px 16px 16px;
+      margin: 0;
+    }
+
+    legend {
+      font-size: .72rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--steel-500);
+      font-weight: 700;
+      padding: 0 6px;
+    }
+
+    .radio-row {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 12px;
+    }
+
+    .radio-row label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 400;
+      font-size: .9rem;
+      color: var(--steel-900);
+      margin-bottom: 0;
+      cursor: pointer;
+    }
+
+    .radio-row input {
+      width: auto;
+      margin: 0;
+    }
+
+    .conditional-block {
+      display: none;
+      margin-top: 14px;
+      border-top: 1px dashed var(--line);
+      padding-top: 14px;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 0 24px 24px;
+      flex-wrap: wrap;
+    }
+
+    .folder-status {
+      font-size: .72rem;
+      color: var(--steel-500);
+      max-width: 340px;
+      line-height: 1.4;
+    }
+
+    .folder-status.ready {
+      color: var(--ok);
+      font-weight: 700;
+    }
+
+    .actions-right {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: .85rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 12px 22px;
+      border: none;
+      cursor: pointer;
+      background: var(--caution);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    button:hover {
+      background: #a83a15;
+    }
+
+    button.secondary {
+      background: var(--steel-700);
+      color: var(--steel-100);
+    }
+
+    button.secondary:hover {
+      background: var(--steel-500);
+    }
+
+    .hint {
+      font-size: .72rem;
+      color: var(--steel-500);
+      margin-top: 6px;
+      font-style: italic;
+    }
+
+    @media (max-width:600px) {
+      .meta-row {
+        grid-template-columns: 1fr;
+      }
+
+      .band {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+
+      .inline-inputs {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .actions-right {
+        justify-content: flex-end;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -215,11 +476,332 @@
     </div>
   </div>
 
-  <!-- Load order matters: folder-storage defines rootDirHandle/saveToFolder,
-       form-logic wires up conditional fields, pdf-generator uses both. -->
-  <script src="js/folder-storage.js"></script>
-  <script src="js/form-logic.js"></script>
-  <script src="js/pdf-generator.js"></script>
+  <script>
+    // ---------- LNG/STD restriction handling ----------
+    const lngModels = ['130', '145', '160', '200', '210', '230', '300', '350', '470', '510'];
+    const modelSelect = document.getElementById('model');
+    const variantSelect = document.getElementById('variant');
+    const optLng = document.getElementById('optLng');
+
+    function checkVariantSupport() {
+      const selectedModel = modelSelect.value;
+      if (lngModels.includes(selectedModel)) {
+        optLng.disabled = false;
+      } else {
+        optLng.disabled = true;
+        if (variantSelect.value === 'LNG') {
+          variantSelect.value = 'STD';
+        }
+      }
+    }
+
+    modelSelect.addEventListener('change', checkVariantSupport);
+
+    // ---------- Toggle Cell dropdowns for Arm / Boom / Main Frame / Track Frame ----------
+    const systemSelect = document.getElementById('system');
+    const armCellBlock = document.getElementById('armCellBlock');
+    const boomCellBlock = document.getElementById('boomCellBlock');
+    const mainFrameCellBlock = document.getElementById('mainFrameCellBlock');
+    const trackFrameCellBlock = document.getElementById('trackFrameCellBlock');
+
+    const variantBlock = document.getElementById('variantBlock');
+
+    function toggleCellBlocks() {
+      const val = systemSelect.value;
+      armCellBlock.style.display = val === 'Arm' ? 'block' : 'none';
+      boomCellBlock.style.display = val === 'Boom' ? 'block' : 'none';
+      mainFrameCellBlock.style.display = val === 'Main Frame' ? 'block' : 'none';
+      trackFrameCellBlock.style.display = val === 'Track Frame' ? 'block' : 'none';
+      variantBlock.style.display = val === 'Arm' ? 'block' : 'none';
+      if (val !== 'Arm') {
+        document.getElementById('armCell').value = '';
+        variantSelect.value = 'STD';
+        optLng.disabled = true;
+      }
+      if (val !== 'Boom') {
+        document.getElementById('boomCell').value = '';
+        document.getElementById('boomRobot').value = '';
+        document.getElementById('boomRobotBlock').style.display = 'none';
+      }
+      if (val !== 'Main Frame') document.getElementById('mainFrameCell').value = '';
+      if (val !== 'Track Frame') document.getElementById('trackFrameCell').value = '';
+    }
+    systemSelect.addEventListener('change', toggleCellBlocks);
+
+    // ---------- Toggle Robot dropdown for specific Boom cells ----------
+    const boomCellSelect = document.getElementById('boomCell');
+    const boomRobotBlock = document.getElementById('boomRobotBlock');
+    const boomRobotCells = ['B1', 'B10', 'B15', 'B16'];
+
+    boomCellSelect.addEventListener('change', function () {
+      const show = boomRobotCells.includes(this.value);
+      boomRobotBlock.style.display = show ? 'block' : 'none';
+      if (!show) document.getElementById('boomRobot').value = '';
+    });
+
+    // ---------- Toggle logic for Follow Up ----------
+    const fuYes = document.getElementById('fuYes');
+    const fuNo = document.getElementById('fuNo');
+    const fuBlock = document.getElementById('followupDetailsBlock');
+
+    function toggleFuBlock() {
+      fuBlock.style.display = fuYes.checked ? 'block' : 'none';
+    }
+    fuYes.addEventListener('change', toggleFuBlock);
+    fuNo.addEventListener('change', toggleFuBlock);
+
+    // ---------- Toggle logic for Isolation Onset ----------
+    const isoYes = document.getElementById('isoYes');
+    const isoNo = document.getElementById('isoNo');
+    const isoBlock = document.getElementById('isolationBlock');
+
+    function toggleIsoBlock() {
+      isoBlock.style.display = isoNo.checked ? 'block' : 'none';
+    }
+    isoYes.addEventListener('change', toggleIsoBlock);
+    isoNo.addEventListener('change', toggleIsoBlock);
+
+    // =====================================================================
+    // FOLDER AUTO-SORT (File System Access API + IndexedDB persistence)
+    // Only supported in Chromium browsers (Chrome, Edge, Brave, Opera).
+    // Safari and Firefox will silently fall back to normal downloads.
+    // =====================================================================
+    const FSA_SUPPORTED = 'showDirectoryPicker' in window;
+    let rootDirHandle = null;
+    const folderStatusEl = document.getElementById('folderStatus');
+    const chooseFolderBtn = document.getElementById('chooseFolderBtn');
+
+    // --- tiny IndexedDB key/value helper, just enough to store one handle ---
+    const DB_NAME = 'weldReportDB';
+    const STORE_NAME = 'handles';
+    function idbOpen() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore(STORE_NAME);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    async function idbSet(key, value) {
+      const db = await idbOpen();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(value, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+    async function idbGet(key) {
+      const db = await idbOpen();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const req = tx.objectStore(STORE_NAME).get(key);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function setFolderStatus(text, ready) {
+      folderStatusEl.textContent = text;
+      folderStatusEl.classList.toggle('ready', !!ready);
+    }
+
+    if (!FSA_SUPPORTED) {
+      setFolderStatus('This browser doesn\'t support folder auto-save (use Chrome or Edge). PDFs will download normally.', false);
+      chooseFolderBtn.disabled = true;
+      chooseFolderBtn.style.opacity = 0.5;
+    }
+
+    async function chooseFolder() {
+      try {
+        rootDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        await idbSet('rootDir', rootDirHandle);
+        setFolderStatus(`Saving into: "${rootDirHandle.name}" (auto-sorted by department & model)`, true);
+      } catch (err) {
+        // user cancelled the picker — not an error worth surfacing
+        if (err.name !== 'AbortError') console.error(err);
+      }
+    }
+    chooseFolderBtn.addEventListener('click', chooseFolder);
+
+    // Try to restore a previously chosen folder on load
+    (async function restoreFolder() {
+      if (!FSA_SUPPORTED) return;
+      try {
+        const saved = await idbGet('rootDir');
+        if (!saved) return;
+        const perm = await saved.queryPermission({ mode: 'readwrite' });
+        if (perm === 'granted') {
+          rootDirHandle = saved;
+          setFolderStatus(`Saving into: "${rootDirHandle.name}" (auto-sorted by department & model)`, true);
+        } else {
+          setFolderStatus(`Folder "${saved.name}" was chosen before — click "Choose Save Folder" to re-grant access.`, false);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+
+    // Gets (or creates) a nested subdirectory path under rootDirHandle
+    async function getNestedDir(pathParts) {
+      let dir = rootDirHandle;
+      for (const part of pathParts) {
+        if (!part) continue;
+        dir = await dir.getDirectoryHandle(sanitizeName(part), { create: true });
+      }
+      return dir;
+    }
+
+    function sanitizeName(name) {
+      return name.replace(/[\\/:*?"<>|]/g, '-').trim() || 'unspecified';
+    }
+
+    // ---------- PDF Generation ----------
+    document.getElementById('downloadBtn').addEventListener('click', async () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+      const margin = 56;
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const usableWidth = pageWidth - margin * 2;
+      let y = 60;
+
+      const get = id => document.getElementById(id).value.trim();
+
+      // Build combined model string
+      const modelVal = get('model');
+      const variantVal = get('variant');
+      const seqVal = get('seqNum');
+
+      let combinedModel = '—';
+      if (modelVal) {
+        combinedModel = `${modelVal} (${variantVal})`;
+        if (seqVal) {
+          combinedModel += ` — Seq #: ${seqVal}`;
+        }
+      }
+
+      const followupNeeded = fuYes.checked ? 'Yes' : (fuNo.checked ? 'No' : '');
+      const programHold = document.getElementById('holdYes').checked ? 'Yes' : (document.getElementById('holdNo').checked ? 'No' : 'N/A');
+      const isolated = isoYes.checked ? 'Yes' : (isoNo.checked ? 'No' : '');
+
+      // Header band
+      doc.setFillColor(27, 33, 38);
+      doc.rect(0, 0, pageWidth, 70, 'F');
+      doc.setDrawColor(200, 70, 27);
+      doc.setLineWidth(3);
+      doc.line(0, 70, pageWidth, 70);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('courier', 'bold');
+      doc.setFontSize(15);
+      doc.text('WELD ISSUE — ROOT CAUSE REPORT', margin, 40);
+      doc.setFontSize(9);
+      doc.setTextColor(159, 176, 184);
+      doc.text('POST-INTERVIEW REVIEW', margin, 56);
+
+      y = 100;
+      doc.setTextColor(27, 33, 38);
+
+      // Meta row
+      doc.setFont('courier', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(90, 107, 116);
+      doc.text('TECHNICIAN', margin, y);
+      doc.text('DATE', margin + usableWidth / 2, y);
+      y += 14;
+      doc.setFont('courier', 'normal');
+      doc.setFontSize(11);
+      doc.setTextColor(27, 33, 38);
+      doc.text(get('techName') || '—', margin, y);
+      doc.text(get('reportDate') || '—', margin + usableWidth / 2, y);
+      y += 20;
+      doc.setDrawColor(201, 207, 209);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 26;
+
+      function section(numLabel, title, bodyText) {
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(200, 70, 27);
+        doc.text(numLabel, margin, y);
+        doc.setTextColor(90, 107, 116);
+        doc.text(title, margin + 22, y);
+        y += 16;
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(10.5);
+        doc.setTextColor(27, 33, 38);
+        const lines = doc.splitTextToSize(bodyText || '—', usableWidth);
+        lines.forEach(line => {
+          if (y > 740) { doc.addPage(); y = 60; }
+          doc.text(line, margin, y);
+          y += 14;
+        });
+        y += 16;
+      }
+
+      section('01', 'WHAT ARE THE ISSUE(S)?', get('issues'));
+      section('02', 'MODEL DETAILS', combinedModel);
+      const systemVal = get('system');
+      const armCellVal = get('armCell');
+      const boomCellVal = get('boomCell');
+      const mainFrameCellVal = get('mainFrameCell');
+      const trackFrameCellVal = get('trackFrameCell');
+      let systemDisplay = systemVal || '—';
+      if (systemVal === 'Arm' && armCellVal) systemDisplay = `Arm — Cell ${armCellVal}`;
+      if (systemVal === 'Boom' && boomCellVal) systemDisplay = `Boom — Cell ${boomCellVal}`;
+      if (systemVal === 'Main Frame' && mainFrameCellVal) systemDisplay = `Main Frame — Cell ${mainFrameCellVal}`;
+      if (systemVal === 'Track Frame' && trackFrameCellVal) systemDisplay = `Track Frame — Cell ${trackFrameCellVal}`;
+      section('03', 'WHAT SYSTEM WAS IT RUN IN?', systemDisplay);
+
+      section('04', 'NEEDS FOLLOW UP?', followupNeeded);
+      if (followupNeeded === 'Yes') {
+        section('', 'PROGRAM PLACED ON HOLD?', programHold);
+        section('', 'FOLLOW-UP DETAILS', get('followupDetails'));
+      }
+
+      section('05', 'SURROUNDING AREA / ROOT CAUSE CLUES', get('surroundings'));
+      section('06', 'ISOLATED TO ONE WELD OR AREA?', isolated);
+
+      if (isolated === 'No') {
+        section('', 'WHEN DID THE ISSUE BEGIN?', get('beganWhen'));
+        section('', 'CLUES AT ONSET POINT', get('onsetClues'));
+      }
+
+      const cellVal = armCellVal || boomCellVal || mainFrameCellVal || trackFrameCellVal;
+      const modelPart = modelVal ? `${modelVal}-${variantVal}` : 'model';
+      const systemPart = systemVal ? (systemVal.replace(/\s+/g, '') + (cellVal ? `-${cellVal}` : '')) : 'system';
+      const sequencePart = seqVal ? `Seq${seqVal}` : 'Seq';
+      const datePart = get('reportDate') || new Date().toISOString().slice(0, 10);
+      const filename = `weld-report_${modelPart}_${systemPart}_${datePart}.pdf`;
+
+      // --- Save into chosen folder, auto-sorted by Department/Model, or fall back ---
+      if (rootDirHandle) {
+        try {
+          const perm = await rootDirHandle.requestPermission({ mode: 'readwrite' });
+          if (perm !== 'granted') throw new Error('Permission denied for save folder.');
+
+          const deptFolder = systemVal || 'Unspecified Department';
+          const modelFolder = modelVal ? `${modelVal}-${variantVal}` : 'Unspecified Model';
+          const targetDir = await getNestedDir([deptFolder, modelFolder]);
+
+          const fileHandle = await targetDir.getFileHandle(filename, { create: true });
+          const writable = await fileHandle.createWritable();
+          const pdfBlob = doc.output('blob');
+          await writable.write(pdfBlob);
+          await writable.close();
+
+          setFolderStatus(`Saved to "${rootDirHandle.name}/${deptFolder}/${modelFolder}/${filename}"`, true);
+          return;
+        } catch (err) {
+          console.error('Folder save failed, falling back to normal download:', err);
+          setFolderStatus(`Couldn't save to folder (${err.message}). Downloaded normally instead.`, false);
+        }
+      }
+
+      // Fallback: normal browser download
+      doc.save(filename);
+    });
+  </script>
+
 </body>
 
 </html>
