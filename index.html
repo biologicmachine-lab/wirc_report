@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weld Issue Root Cause Report</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+  <div class="sheet">
+    <div class="band">
+      <h1>Weld Issue — Root Cause Report</h1>
+      <span class="tag">Post-Review</span>
+    </div>
+
+    <div class="meta-row">
+      <div class="cell">
+        <label>Technician</label>
+        <input type="text" id="techName" placeholder="Name">
+      </div>
+      <div class="cell">
+        <label>Shift</label>
+        <select id="shift">
+          <option value="">-- Shift --</option>
+          <option value="1st">1st</option>
+          <option value="2nd">2nd</option>
+          <option value="3rd">3rd</option>
+        </select>
+      </div>
+      <div class="cell">
+        <label>Date</label>
+        <input type="date" id="reportDate">
+      </div>
+    </div>
+
+    <form id="reportForm">
+      <div class="field">
+        <label><span class="num">01</span>What are the issue(s)?</label>
+        <input type="text" id="weldNum" placeholder="Weld #" style="width:95%;margin-bottom:8px;">
+        <textarea id="issues"
+          placeholder="Describe the defect(s) observed — porosity, undercut, cracking, spatter, etc."></textarea>
+      </div>
+
+      <div class="field">
+        <label><span class="num">02</span>What system was it run in?</label>
+        <select id="system">
+          <option value="">-- Department --</option>
+          <option value="Arm">Arm</option>
+          <option value="Boom">Boom</option>
+          <option value="Main Frame">Main Frame</option>
+          <option value="Track Frame">Track Frame</option>
+        </select>
+        <div id="armCellBlock" class="conditional-block">
+          <label style="margin-top:14px;">Cell</label>
+          <select id="armCell">
+            <option value="">-- Cell --</option>
+            <option value="A5">A5</option>
+            <option value="A6">A6</option>
+            <option value="A7">A7</option>
+            <option value="A8">A8</option>
+            <option value="A9">A9</option>
+            <option value="A10">A10</option>
+          </select>
+        </div>
+        <div id="boomCellBlock" class="conditional-block">
+          <label style="margin-top:14px;">Cell</label>
+          <select id="boomCell">
+            <option value="">-- Cell --</option>
+            <option value="B1">B1</option>
+            <option value="B2">B2</option>
+            <option value="B9">B9</option>
+            <option value="B10">B10</option>
+            <option value="B11">B11</option>
+            <option value="B12">B12</option>
+            <option value="B13">B13</option>
+            <option value="B15">B15</option>
+            <option value="B16">B16</option>
+            <option value="B17">B17</option>
+          </select>
+          <div id="boomRobotBlock" class="conditional-block">
+            <label style="margin-top:14px;">Robot</label>
+            <select id="boomRobot">
+              <option value="">-- Robot --</option>
+              <option value="R1">R1</option>
+              <option value="R2">R2</option>
+            </select>
+          </div>
+        </div>
+        <div id="mainFrameCellBlock" class="conditional-block">
+          <label style="margin-top:14px;">Cell</label>
+          <select id="mainFrameCell">
+            <option value="">-- Cell --</option>
+            <option value="M1">M1</option>
+            <option value="M2">M2</option>
+            <option value="M7">M7</option>
+            <option value="M10">M10</option>
+            <option value="M12">M12</option>
+            <option value="MX">MX</option>
+            <option value="MXI">MXI</option>
+          </select>
+        </div>
+        <div id="trackFrameCellBlock" class="conditional-block">
+          <label style="margin-top:14px;">Cell</label>
+          <select id="trackFrameCell">
+            <option value="">-- Cell --</option>
+            <option value="T1">T1</option>
+            <option value="T2">T2</option>
+            <option value="T3">T3</option>
+            <option value="T4">T4</option>
+            <option value="T19">T19</option>
+            <option value="T20">T20</option>
+            <option value="T21">T21</option>
+            <option value="T22">T22</option>
+            <option value="T23">T23</option>
+            <option value="T24">T24</option>
+            <option value="T25">T25</option>
+            <option value="T26">T26</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Section 03: Model, Variant, and Sequence -->
+      <div class="field">
+        <label><span class="num">03</span>Model Details</label>
+        <div class="inline-inputs">
+          <select id="model">
+            <option value="">-- Model --</option>
+            <option value="130">130</option>
+            <option value="145">145</option>
+            <option value="160">160</option>
+            <option value="200">200</option>
+            <option value="210">210</option>
+            <option value="230">230</option>
+            <option value="260">260</option>
+            <option value="300">300</option>
+            <option value="350">350</option>
+            <option value="380">380</option>
+            <option value="510">510</option>
+          </select>
+
+          <div id="variantBlock" style="display:none">
+            <select id="variant" style="width:100%">
+              <option value="STD">STD</option>
+              <option value="LNG" id="optLng">LNG</option>
+            </select>
+          </div>
+
+          <input type="text" id="seqNum" placeholder="Sequence #">
+        </div>
+      </div>
+
+      <!-- Section 04: Follow Up -->
+      <div class="field">
+        <fieldset>
+          <label><span class="num">04</span>Does this issue require follow-up?</label>
+          <div class="radio-row">
+            <label><input type="radio" name="followupNeeded" value="yes" id="fuYes"> Yes</label>
+            <label><input type="radio" name="followupNeeded" value="no" id="fuNo"> No</label>
+          </div>
+          <div id="followupDetailsBlock" class="conditional-block">
+            <label>Program Status</label>
+            <div class="radio-row" style="margin-bottom:14px;">
+              <label><input type="radio" name="programHold" value="yes" id="holdYes"> Placed hold</label>
+              <label><input type="radio" name="programHold" value="no" id="holdNo"> No hold placed</label>
+            </div>
+            <label>Follow-Up Details & Action Items</label>
+            <textarea id="followupDetails"
+              placeholder="Describe required follow-up actions, assigned personnel, or quality containment steps..."></textarea>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- Section 05: Surrounding Area -->
+      <div class="field">
+        <label><span class="num">05</span>What does the surrounding area show?</label>
+        <textarea id="surroundings"
+          placeholder="Look for clues pointing toward root cause — fixture wear, spatter buildup, contamination, misalignment, etc."></textarea>
+      </div>
+
+      <!-- Section 06: Isolation & Onset -->
+      <div class="field">
+        <label><span class="num">06</span>Is the issue isolated to one weld or area?</label>
+        <fieldset>
+          <div class="radio-row">
+            <label><input type="radio" name="isolated" value="yes" id="isoYes"> Yes</label>
+            <label><input type="radio" name="isolated" value="no" id="isoNo"> No</label>
+          </div>
+          <div id="isolationBlock" class="conditional-block">
+            <label>When did the issue begin?</label>
+            <input type="text" id="beganWhen" placeholder="Date, shift, batch, or event it started">
+            <div class="hint" style="margin-bottom:10px;">Details the area where the issue started.</div>
+            <label>Clues at onset point</label>
+            <textarea id="onsetClues"
+              placeholder="What changed at that point — tooling swap, program edit, material lot, operator change, etc."></textarea>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- Section 07: Reported By -->
+      <div class="field">
+        <label><span class="num">07</span>Reported by</label>
+        <input type="text" id="reportedBy" placeholder="QA-Technician, Lead-Technician or Operator's name">
+      </div>
+    </form>
+
+    <div class="actions">
+      <div class="folder-status" id="folderStatus">No save folder chosen — PDFs will use your browser's normal download.</div>
+      <div class="actions-right">
+        <button type="button" id="chooseFolderBtn" class="secondary">Choose Save Folder</button>
+        <button type="button" id="downloadBtn">Download PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load order matters: folder-storage defines rootDirHandle/saveToFolder,
+       form-logic wires up conditional fields, pdf-generator uses both. -->
+  <script src="js/folder-storage.js"></script>
+  <script src="js/form-logic.js"></script>
+  <script src="js/pdf-generator.js"></script>
+</body>
+
+</html>
