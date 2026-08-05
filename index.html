@@ -786,7 +786,9 @@
       const datePart = get('reportDate') || new Date().toISOString().slice(0, 10);
       const filename = `weld-report_${modelPart}_${systemPart}_${datePart}.pdf`;
 
-      // --- Save into chosen folder, auto-sorted by Department/Model, or fall back ---
+      const blob = doc.output('blob');
+
+      // Save into the chosen folder, or fall back to a normal browser download ---
       if (rootDirHandle) {
         try {
           const perm = await rootDirHandle.requestPermission({ mode: 'readwrite' });
@@ -794,8 +796,7 @@
 
           const fileHandle = await rootDirHandle.getFileHandle(filename, { create: true });
           const writable = await fileHandle.createWritable();
-          const pdfBlob = doc.output('blob');
-          await writable.write(pdfBlob);
+          await writable.write(blob);
           await writable.close();
 
           setFolderStatus(`Saved to "${rootDirHandle.name}/${filename}"`, true);
@@ -806,8 +807,7 @@
         }
       }
 
-      // Fb- normal browser download — anchor must be in dom (Firefox)
-      const blob = doc.output('blob');
+      // Fallback: normal browser download — anchor must be in the DOM (Firefox)
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
