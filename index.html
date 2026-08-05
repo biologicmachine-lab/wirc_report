@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -101,6 +102,7 @@
 
     input[type=text],
     input[type=date],
+    input[type=number],
     select,
     textarea {
       width: 95%;
@@ -299,14 +301,18 @@
 
     <form id="reportForm">
       <div class="field">
-        <label><span class="num">01</span>What are the issue(s)?</label>
-        <input type="text" id="weldNum" placeholder="Weld #" style="width:95%;margin-bottom:8px;">
+        <label><span class="num">01</span>Weld #(s)</label>
+        <input type="text" id="weldNum" placeholder="e.g. 14, 22, 35" style="width:95%;margin-bottom:8px;">
+        <div class="hint">Separate multiple weld numbers with commas.</div>
+      </div>
+      <div class="field">
+        <label><span class="num">02</span>What are the issues?</label>
         <textarea id="issues"
           placeholder="Describe the defect(s) observed — porosity, undercut, cracking, spatter, etc."></textarea>
       </div>
 
       <div class="field">
-        <label><span class="num">02</span>What system was it run in?</label>
+        <label><span class="num">03</span>What system was it run in?</label>
         <select id="system">
           <option value="">-- Department --</option>
           <option value="Arm">Arm</option>
@@ -385,7 +391,7 @@
 
       <!-- Section 03: Model, Variant, and Sequence -->
       <div class="field">
-        <label><span class="num">03</span>Model Details</label>
+        <label><span class="num">04</span>Model Details</label>
         <div class="inline-inputs">
           <select id="model">
             <option value="">-- Model --</option>
@@ -402,7 +408,7 @@
             <option value="510">510</option>
           </select>
 
-          <div id="variantBlock" style="display:none">
+          <div id="variantBlock" style="visibility:hidden">
             <select id="variant" style="width:100%">
               <option value="STD">STD</option>
               <option value="LNG" id="optLng">LNG</option>
@@ -416,7 +422,7 @@
       <!-- Section 04: Follow Up -->
       <div class="field">
         <fieldset>
-          <label><span class="num">04</span>Does this issue require follow-up?</label>
+          <label><span class="num">05</span>Does this issue require follow-up?</label>
           <div class="radio-row">
             <label><input type="radio" name="followupNeeded" value="yes" id="fuYes"> Yes</label>
             <label><input type="radio" name="followupNeeded" value="no" id="fuNo"> No</label>
@@ -436,14 +442,14 @@
 
       <!-- Section 05: Surrounding Area -->
       <div class="field">
-        <label><span class="num">05</span>What does the surrounding area show?</label>
+        <label><span class="num">06</span>What does the surrounding area show?</label>
         <textarea id="surroundings"
           placeholder="Look for clues pointing toward root cause — fixture wear, spatter buildup, contamination, misalignment, etc."></textarea>
       </div>
 
       <!-- Section 06: Isolation & Onset -->
       <div class="field">
-        <label><span class="num">06</span>Is the issue isolated to one weld or area?</label>
+        <label><span class="num">07</span>Is the issue isolated to one weld or area?</label>
         <fieldset>
           <div class="radio-row">
             <label><input type="radio" name="isolated" value="yes" id="isoYes"> Yes</label>
@@ -462,16 +468,17 @@
 
       <!-- Section 07: Reported By -->
       <div class="field">
-        <label><span class="num">07</span>Reported by</label>
+        <label><span class="num">08</span>Reported by</label>
         <input type="text" id="reportedBy" placeholder="QA-Technician, Lead-Technician or Operator's name">
       </div>
     </form>
 
     <div class="actions">
-      <div class="folder-status" id="folderStatus">No save folder chosen — PDFs will use your browser's normal download.</div>
+      <div class="folder-status" id="folderStatus">No save folder chosen — PDFs will use your browser's normal download.
+      </div>
       <div class="actions-right">
-        <button type="button" id="chooseFolderBtn" class="secondary">Choose Save Folder</button>
-        <button type="button" id="downloadBtn">Download PDF</button>
+        <button type="button" id="chooseFolderBtn" class="secondary">1 Choose Save Folder</button>
+        <button type="button" id="downloadBtn">2 Download PDF</button>
       </div>
     </div>
   </div>
@@ -512,7 +519,7 @@
       boomCellBlock.style.display = val === 'Boom' ? 'block' : 'none';
       mainFrameCellBlock.style.display = val === 'Main Frame' ? 'block' : 'none';
       trackFrameCellBlock.style.display = val === 'Track Frame' ? 'block' : 'none';
-      variantBlock.style.display = val === 'Arm' ? 'block' : 'none';
+      variantBlock.style.visibility = val === 'Arm' ? 'visible' : 'hidden';
       if (val !== 'Arm') {
         document.getElementById('armCell').value = '';
         variantSelect.value = 'STD';
@@ -616,7 +623,7 @@
       try {
         rootDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
         await idbSet('rootDir', rootDirHandle);
-        setFolderStatus(`Saving into: "${rootDirHandle.name}" (auto-sorted by department & model)`, true);
+        setFolderStatus(`Saving into: "${rootDirHandle.name}"`, true);
       } catch (err) {
         // user cancelled the picker — not an error worth surfacing
         if (err.name !== 'AbortError') console.error(err);
@@ -633,7 +640,7 @@
         const perm = await saved.queryPermission({ mode: 'readwrite' });
         if (perm === 'granted') {
           rootDirHandle = saved;
-          setFolderStatus(`Saving into: "${rootDirHandle.name}" (auto-sorted by department & model)`, true);
+          setFolderStatus(`Saving into: "${rootDirHandle.name}"`, true);
         } else {
           setFolderStatus(`Folder "${saved.name}" was chosen before — click "Choose Save Folder" to re-grant access.`, false);
         }
@@ -642,14 +649,11 @@
       }
     })();
 
-    // Gets (or creates) a nested subdirectory path under rootDirHandle
-    async function getNestedDir(pathParts) {
-      let dir = rootDirHandle;
-      for (const part of pathParts) {
-        if (!part) continue;
-        dir = await dir.getDirectoryHandle(sanitizeName(part), { create: true });
-      }
-      return dir;
+    // avoids timezone shift bugs by splitting iso string directly
+    function formatDate(isoStr) {
+      if (!isoStr) return '—';
+      const [y, m, d] = isoStr.split('-');
+      return `${m}/${d}/${y}`;
     }
 
     function sanitizeName(name) {
@@ -706,13 +710,15 @@
       doc.setFontSize(9);
       doc.setTextColor(90, 107, 116);
       doc.text('TECHNICIAN', margin, y);
-      doc.text('DATE', margin + usableWidth / 2, y);
+      doc.text('SHIFT', margin + usableWidth / 3, y);
+      doc.text('DATE', margin + (2 * usableWidth) / 3, y);
       y += 14;
       doc.setFont('courier', 'normal');
       doc.setFontSize(11);
       doc.setTextColor(27, 33, 38);
       doc.text(get('techName') || '—', margin, y);
-      doc.text(get('reportDate') || '—', margin + usableWidth / 2, y);
+      doc.text(get('shift') || '—', margin + usableWidth / 3, y);
+      doc.text(formatDate(get('reportDate')), margin + (2 * usableWidth) / 3, y);
       y += 20;
       doc.setDrawColor(201, 207, 209);
       doc.line(margin, y, pageWidth - margin, y);
@@ -738,33 +744,40 @@
         y += 16;
       }
 
-      section('01', 'WHAT ARE THE ISSUE(S)?', get('issues'));
-      section('02', 'MODEL DETAILS', combinedModel);
+      section('01', 'WELD #(S)', get('weldNum'));
+      section('02', 'WHAT ARE THE ISSUE(S)?', get('issues'));
+      section('03', 'MODEL DETAILS', combinedModel);
       const systemVal = get('system');
       const armCellVal = get('armCell');
       const boomCellVal = get('boomCell');
       const mainFrameCellVal = get('mainFrameCell');
       const trackFrameCellVal = get('trackFrameCell');
+      const boomRobotVal = get('boomRobot');
       let systemDisplay = systemVal || '—';
       if (systemVal === 'Arm' && armCellVal) systemDisplay = `Arm — Cell ${armCellVal}`;
-      if (systemVal === 'Boom' && boomCellVal) systemDisplay = `Boom — Cell ${boomCellVal}`;
+      if (systemVal === 'Boom' && boomCellVal) {
+        systemDisplay = `Boom — Cell ${boomCellVal}`;
+        if (boomRobotVal) systemDisplay += ` — Robot ${boomRobotVal}`;
+      }
       if (systemVal === 'Main Frame' && mainFrameCellVal) systemDisplay = `Main Frame — Cell ${mainFrameCellVal}`;
       if (systemVal === 'Track Frame' && trackFrameCellVal) systemDisplay = `Track Frame — Cell ${trackFrameCellVal}`;
-      section('03', 'WHAT SYSTEM WAS IT RUN IN?', systemDisplay);
+      section('04', 'WHAT SYSTEM WAS IT RUN IN?', systemDisplay);
 
-      section('04', 'NEEDS FOLLOW UP?', followupNeeded);
+      section('05', 'NEEDS FOLLOW UP?', followupNeeded);
       if (followupNeeded === 'Yes') {
         section('', 'PROGRAM PLACED ON HOLD?', programHold);
         section('', 'FOLLOW-UP DETAILS', get('followupDetails'));
       }
 
-      section('05', 'SURROUNDING AREA / ROOT CAUSE CLUES', get('surroundings'));
-      section('06', 'ISOLATED TO ONE WELD OR AREA?', isolated);
+      section('06', 'SURROUNDING AREA / ROOT CAUSE CLUES', get('surroundings'));
+      section('07', 'ISOLATED TO ONE WELD OR AREA?', isolated);
 
       if (isolated === 'No') {
         section('', 'WHEN DID THE ISSUE BEGIN?', get('beganWhen'));
         section('', 'CLUES AT ONSET POINT', get('onsetClues'));
       }
+
+      section('08', 'REPORTED BY', get('reportedBy'));
 
       const cellVal = armCellVal || boomCellVal || mainFrameCellVal || trackFrameCellVal;
       const modelPart = modelVal ? `${modelVal}-${variantVal}` : 'model';
@@ -779,17 +792,13 @@
           const perm = await rootDirHandle.requestPermission({ mode: 'readwrite' });
           if (perm !== 'granted') throw new Error('Permission denied for save folder.');
 
-          const deptFolder = systemVal || 'Unspecified Department';
-          const modelFolder = modelVal ? `${modelVal}-${variantVal}` : 'Unspecified Model';
-          const targetDir = await getNestedDir([deptFolder, modelFolder]);
-
-          const fileHandle = await targetDir.getFileHandle(filename, { create: true });
+          const fileHandle = await rootDirHandle.getFileHandle(filename, { create: true });
           const writable = await fileHandle.createWritable();
           const pdfBlob = doc.output('blob');
           await writable.write(pdfBlob);
           await writable.close();
 
-          setFolderStatus(`Saved to "${rootDirHandle.name}/${deptFolder}/${modelFolder}/${filename}"`, true);
+          setFolderStatus(`Saved to "${rootDirHandle.name}/${filename}"`, true);
           return;
         } catch (err) {
           console.error('Folder save failed, falling back to normal download:', err);
@@ -797,8 +806,16 @@
         }
       }
 
-      // Fallback: normal browser download
-      doc.save(filename);
+      // Fb- normal browser download — anchor must be in dom (Firefox)
+      const blob = doc.output('blob');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
     });
   </script>
 
