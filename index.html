@@ -103,7 +103,7 @@
     input[type=date],
     select,
     textarea {
-      width: 95%;
+      width: 100%;
       font-family: inherit;
       font-size: .95rem;
       padding: 10px 12px;
@@ -129,7 +129,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr 1.5fr;
       gap: 12px;
-      width: 95%;
+      width: 100%;
     }
 
     .inline-inputs select,
@@ -181,6 +181,59 @@
       margin-top: 14px;
       border-top: 1px dashed var(--line);
       padding-top: 14px;
+    }
+
+    /* Image Attachment Styling */
+    .photo-upload-btn {
+      display: inline-block;
+      background: var(--steel-700);
+      color: var(--steel-100);
+      padding: 10px 18px;
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid var(--steel-500);
+      margin-bottom: 12px;
+    }
+
+    .photo-upload-btn:hover {
+      background: var(--steel-500);
+    }
+
+    .image-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 12px;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .preview-thumb {
+      position: relative;
+      width: 100%;
+      height: 100px;
+      border: 1px solid var(--steel-500);
+      background-size: cover;
+      background-position: center;
+    }
+
+    .preview-thumb .remove-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: var(--caution);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      font-size: 14px;
+      line-height: 20px;
+      text-align: center;
+      padding: 0;
+      cursor: pointer;
     }
 
     .actions {
@@ -300,7 +353,7 @@
     <form id="reportForm">
       <div class="field">
         <label><span class="num">01</span>What are the issue(s)?</label>
-        <input type="text" id="weldNum" placeholder="Weld #" style="width:95%;margin-bottom:8px;">
+        <input type="text" id="weldNum" placeholder="Weld #" style="margin-bottom:8px;">
         <textarea id="issues"
           placeholder="Describe the defect(s) observed — porosity, undercut, cracking, spatter, etc."></textarea>
       </div>
@@ -383,7 +436,7 @@
         </div>
       </div>
 
-      <!-- Section 03: Model, Variant, and Sequence -->
+      <!-- Section 03: Model Details -->
       <div class="field">
         <label><span class="num">03</span>Model Details</label>
         <div class="inline-inputs">
@@ -413,7 +466,7 @@
         </div>
       </div>
 
-      <!-- Section 04: Follow Up -->
+      <!-- Section 04: Follow up -->
       <div class="field">
         <fieldset>
           <label><span class="num">04</span>Does this issue require follow-up?</label>
@@ -427,21 +480,21 @@
               <label><input type="radio" name="programHold" value="yes" id="holdYes"> Placed hold</label>
               <label><input type="radio" name="programHold" value="no" id="holdNo"> No hold placed</label>
             </div>
-            <label>Follow-Up Details & Action Items</label>
+            <label>Follow-Up Details - Action Items</label>
             <textarea id="followupDetails"
               placeholder="Describe required follow-up actions, assigned personnel, or quality containment steps..."></textarea>
           </div>
         </fieldset>
       </div>
 
-      <!-- Section 05: Surrounding Area -->
+      <!-- Section 05: Surrounding area -->
       <div class="field">
         <label><span class="num">05</span>What does the surrounding area show?</label>
         <textarea id="surroundings"
           placeholder="Look for clues pointing toward root cause — fixture wear, spatter buildup, contamination, misalignment, etc."></textarea>
       </div>
 
-      <!-- Section 06: Isolation & Onset -->
+      <!-- Section 06: Isolation - Onset -->
       <div class="field">
         <label><span class="num">06</span>Is the issue isolated to one weld or area?</label>
         <fieldset>
@@ -465,6 +518,17 @@
         <label><span class="num">07</span>Reported by</label>
         <input type="text" id="reportedBy" placeholder="QA-Technician, Lead-Technician or Operator's name">
       </div>
+
+      <!-- Section 08: Photo documentation -->
+      <div class="field">
+        <label><span class="num">08</span>Photo Documentation</label>
+        <label class="photo-upload-btn">
+          Take / Add Image(s)
+          <input type="file" id="photoInput" accept="image/*" capture="environment" multiple style="display:none;">
+        </label>
+        <div class="hint">Tap button to use camera or select existing photos.</div>
+        <div class="image-preview-grid" id="imagePreviewGrid"></div>
+      </div>
     </form>
 
     <div class="actions">
@@ -477,8 +541,52 @@
   </div>
 
   <script>
-    // ---------- LNG/STD restriction handling ----------
-    const lngModels = ['130', '145', '160', '200', '210', '230', '300', '350', '470', '510'];
+    // ---------- Image handling array ----------
+    let attachedPhotos = []; 
+
+    const photoInput = document.getElementById('photoInput');
+    const imagePreviewGrid = document.getElementById('imagePreviewGrid');
+
+    photoInput.addEventListener('change', function (e) {
+      const files = Array.from(e.target.files);
+      files.forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+          const dataUrl = evt.target.result;
+          const format = file.type.includes('png') ? 'PNG' : 'JPEG';
+          attachedPhotos.push({ dataUrl, format });
+          renderPhotoPreviews();
+        };
+        reader.readAsDataURL(file);
+      });
+      this.value = '';
+    });
+
+    function renderPhotoPreviews() {
+      imagePreviewGrid.innerHTML = '';
+      attachedPhotos.forEach((photo, index) => {
+        const thumb = document.createElement('div');
+        thumb.className = 'preview-thumb';
+        thumb.style.backgroundImage = `url(${photo.dataUrl})`;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.type = 'button';
+        removeBtn.onclick = (e) => {
+          e.stopPropagation();
+          attachedPhotos.splice(index, 1);
+          renderPhotoPreviews();
+        };
+
+        thumb.appendChild(removeBtn);
+        imagePreviewGrid.appendChild(thumb);
+      });
+    }
+
+    // ---------- Lng/Std restriction handling ----------
+    const lngModels = ['130', '145', '160', '200', '210', '230', '300', '350', '380', '510'];
     const modelSelect = document.getElementById('model');
     const variantSelect = document.getElementById('variant');
     const optLng = document.getElementById('optLng');
@@ -539,7 +647,7 @@
       if (!show) document.getElementById('boomRobot').value = '';
     });
 
-    // ---------- Toggle logic for Follow Up ----------
+    // ---------- Toggle logic for follow up ----------
     const fuYes = document.getElementById('fuYes');
     const fuNo = document.getElementById('fuNo');
     const fuBlock = document.getElementById('followupDetailsBlock');
@@ -550,7 +658,7 @@
     fuYes.addEventListener('change', toggleFuBlock);
     fuNo.addEventListener('change', toggleFuBlock);
 
-    // ---------- Toggle logic for Isolation Onset ----------
+    // ---------- Toggle logic for isolation onset ----------
     const isoYes = document.getElementById('isoYes');
     const isoNo = document.getElementById('isoNo');
     const isoBlock = document.getElementById('isolationBlock');
@@ -562,16 +670,13 @@
     isoNo.addEventListener('change', toggleIsoBlock);
 
     // =====================================================================
-    // FOLDER AUTO-SORT (File System Access API + IndexedDB persistence)
-    // Only supported in Chromium browsers (Chrome, Edge, Brave, Opera).
-    // Safari and Firefox will silently fall back to normal downloads.
+    // Direct Folder Save via File System Access API
     // =====================================================================
     const FSA_SUPPORTED = 'showDirectoryPicker' in window;
     let rootDirHandle = null;
     const folderStatusEl = document.getElementById('folderStatus');
     const chooseFolderBtn = document.getElementById('chooseFolderBtn');
 
-    // --- tiny IndexedDB key/value helper, just enough to store one handle ---
     const DB_NAME = 'weldReportDB';
     const STORE_NAME = 'handles';
     function idbOpen() {
@@ -607,7 +712,7 @@
     }
 
     if (!FSA_SUPPORTED) {
-      setFolderStatus('This browser doesn\'t support folder auto-save (use Chrome or Edge). PDFs will download normally.', false);
+      setFolderStatus('This browser doesn\'t support direct folder access (use Chrome or Edge). PDFs will download normally.', false);
       chooseFolderBtn.disabled = true;
       chooseFolderBtn.style.opacity = 0.5;
     }
@@ -616,15 +721,13 @@
       try {
         rootDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
         await idbSet('rootDir', rootDirHandle);
-        setFolderStatus(`Saving into: "${rootDirHandle.name}" (auto-sorted by department & model)`, true);
+        setFolderStatus(`Saving directly into selected folder: "${rootDirHandle.name}"`, true);
       } catch (err) {
-        // user cancelled the picker — not an error worth surfacing
         if (err.name !== 'AbortError') console.error(err);
       }
     }
     chooseFolderBtn.addEventListener('click', chooseFolder);
 
-    // Try to restore a previously chosen folder on load
     (async function restoreFolder() {
       if (!FSA_SUPPORTED) return;
       try {
@@ -633,7 +736,7 @@
         const perm = await saved.queryPermission({ mode: 'readwrite' });
         if (perm === 'granted') {
           rootDirHandle = saved;
-          setFolderStatus(`Saving into: "${rootDirHandle.name}" (auto-sorted by department & model)`, true);
+          setFolderStatus(`Saving directly into selected folder: "${rootDirHandle.name}"`, true);
         } else {
           setFolderStatus(`Folder "${saved.name}" was chosen before — click "Choose Save Folder" to re-grant access.`, false);
         }
@@ -642,21 +745,16 @@
       }
     })();
 
-    // Gets (or creates) a nested subdirectory path under rootDirHandle
-    async function getNestedDir(pathParts) {
-      let dir = rootDirHandle;
-      for (const part of pathParts) {
-        if (!part) continue;
-        dir = await dir.getDirectoryHandle(sanitizeName(part), { create: true });
-      }
-      return dir;
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
     }
 
-    function sanitizeName(name) {
-      return name.replace(/[\\/:*?"<>|]/g, '-').trim() || 'unspecified';
-    }
-
-    // ---------- PDF Generation ----------
+    // ---------- PDF Generation & direct save ----------
     document.getElementById('downloadBtn').addEventListener('click', async () => {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'pt', format: 'letter' });
@@ -667,10 +765,10 @@
 
       const get = id => document.getElementById(id).value.trim();
 
-      // Build combined model string
       const modelVal = get('model');
       const variantVal = get('variant');
       const seqVal = get('seqNum');
+      const weldNumVal = get('weldNum');
 
       let combinedModel = '—';
       if (modelVal) {
@@ -696,7 +794,7 @@
       doc.text('WELD ISSUE — ROOT CAUSE REPORT', margin, 40);
       doc.setFontSize(9);
       doc.setTextColor(159, 176, 184);
-      doc.text('POST-INTERVIEW REVIEW', margin, 56);
+      doc.text('POST-REVIEW', margin, 56);
 
       y = 100;
       doc.setTextColor(27, 33, 38);
@@ -706,13 +804,15 @@
       doc.setFontSize(9);
       doc.setTextColor(90, 107, 116);
       doc.text('TECHNICIAN', margin, y);
-      doc.text('DATE', margin + usableWidth / 2, y);
+      doc.text('SHIFT', margin + 180, y);
+      doc.text('DATE', margin + usableWidth / 2 + 60, y);
       y += 14;
       doc.setFont('courier', 'normal');
       doc.setFontSize(11);
       doc.setTextColor(27, 33, 38);
       doc.text(get('techName') || '—', margin, y);
-      doc.text(get('reportDate') || '—', margin + usableWidth / 2, y);
+      doc.text(get('shift') || '—', margin + 180, y);
+      doc.text(get('reportDate') || '—', margin + usableWidth / 2 + 60, y);
       y += 20;
       doc.setDrawColor(201, 207, 209);
       doc.line(margin, y, pageWidth - margin, y);
@@ -738,16 +838,25 @@
         y += 16;
       }
 
-      section('01', 'WHAT ARE THE ISSUE(S)?', get('issues'));
+      let issueSummary = get('issues');
+      if (weldNumVal) {
+        issueSummary = `[Weld #: ${weldNumVal}]\n` + issueSummary;
+      }
+
+      section('01', 'WHAT ARE THE ISSUE(S)?', issueSummary);
       section('02', 'MODEL DETAILS', combinedModel);
+
       const systemVal = get('system');
       const armCellVal = get('armCell');
       const boomCellVal = get('boomCell');
+      const boomRobotVal = get('boomRobot');
       const mainFrameCellVal = get('mainFrameCell');
       const trackFrameCellVal = get('trackFrameCell');
       let systemDisplay = systemVal || '—';
       if (systemVal === 'Arm' && armCellVal) systemDisplay = `Arm — Cell ${armCellVal}`;
-      if (systemVal === 'Boom' && boomCellVal) systemDisplay = `Boom — Cell ${boomCellVal}`;
+      if (systemVal === 'Boom' && boomCellVal) {
+        systemDisplay = `Boom — Cell ${boomCellVal}` + (boomRobotVal ? ` (${boomRobotVal})` : '');
+      }
       if (systemVal === 'Main Frame' && mainFrameCellVal) systemDisplay = `Main Frame — Cell ${mainFrameCellVal}`;
       if (systemVal === 'Track Frame' && trackFrameCellVal) systemDisplay = `Track Frame — Cell ${trackFrameCellVal}`;
       section('03', 'WHAT SYSTEM WAS IT RUN IN?', systemDisplay);
@@ -766,6 +875,49 @@
         section('', 'CLUES AT ONSET POINT', get('onsetClues'));
       }
 
+      section('07', 'REPORTED BY', get('reportedBy'));
+
+      // Section 08: Render Attached Photos onto PDF
+      if (attachedPhotos.length > 0) {
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(200, 70, 27);
+        doc.text('08', margin, y);
+        doc.setTextColor(90, 107, 116);
+        doc.text('PHOTO DOCUMENTATION', margin + 22, y);
+        y += 20;
+
+        const maxImgWidth = (usableWidth - 16) / 2;
+        const maxImgHeight = 160;
+
+        for (let i = 0; i < attachedPhotos.length; i += 2) {
+          if (y + maxImgHeight > 740) {
+            doc.addPage();
+            y = 60;
+          }
+
+          const photo1 = attachedPhotos[i];
+          const img1 = await loadImage(photo1.dataUrl);
+          let ratio1 = Math.min(maxImgWidth / img1.width, maxImgHeight / img1.height);
+          let w1 = img1.width * ratio1;
+          let h1 = img1.height * ratio1;
+
+          doc.addImage(photo1.dataUrl, photo1.format, margin, y, w1, h1);
+
+          if (i + 1 < attachedPhotos.length) {
+            const photo2 = attachedPhotos[i + 1];
+            const img2 = await loadImage(photo2.dataUrl);
+            let ratio2 = Math.min(maxImgWidth / img2.width, maxImgHeight / img2.height);
+            let w2 = img2.width * ratio2;
+            let h2 = img2.height * ratio2;
+
+            doc.addImage(photo2.dataUrl, photo2.format, margin + maxImgWidth + 16, y, w2, h2);
+          }
+
+          y += Math.max(h1, (i + 1 < attachedPhotos.length) ? maxImgHeight : h1) + 16;
+        }
+      }
+
       const cellVal = armCellVal || boomCellVal || mainFrameCellVal || trackFrameCellVal;
       const modelPart = modelVal ? `${modelVal}-${variantVal}` : 'model';
       const systemPart = systemVal ? (systemVal.replace(/\s+/g, '') + (cellVal ? `-${cellVal}` : '')) : 'system';
@@ -773,23 +925,19 @@
       const datePart = get('reportDate') || new Date().toISOString().slice(0, 10);
       const filename = `weld-report_${modelPart}_${systemPart}_${datePart}.pdf`;
 
-      // --- Save into chosen folder, auto-sorted by Department/Model, or fall back ---
+      // Direct Save to Selected Directory (No Subfolders Created)
       if (rootDirHandle) {
         try {
           const perm = await rootDirHandle.requestPermission({ mode: 'readwrite' });
           if (perm !== 'granted') throw new Error('Permission denied for save folder.');
 
-          const deptFolder = systemVal || 'Unspecified Department';
-          const modelFolder = modelVal ? `${modelVal}-${variantVal}` : 'Unspecified Model';
-          const targetDir = await getNestedDir([deptFolder, modelFolder]);
-
-          const fileHandle = await targetDir.getFileHandle(filename, { create: true });
+          const fileHandle = await rootDirHandle.getFileHandle(filename, { create: true });
           const writable = await fileHandle.createWritable();
           const pdfBlob = doc.output('blob');
           await writable.write(pdfBlob);
           await writable.close();
 
-          setFolderStatus(`Saved to "${rootDirHandle.name}/${deptFolder}/${modelFolder}/${filename}"`, true);
+          setFolderStatus(`Saved to "${rootDirHandle.name}/${filename}"`, true);
           return;
         } catch (err) {
           console.error('Folder save failed, falling back to normal download:', err);
@@ -797,7 +945,7 @@
         }
       }
 
-      // Fallback: normal browser download
+      // Fallback download if no directory handle exists
       doc.save(filename);
     });
   </script>
