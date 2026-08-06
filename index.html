@@ -183,6 +183,59 @@
       padding-top: 14px;
     }
 
+    /* Image Attachment Styling */
+    .photo-upload-btn {
+      display: inline-block;
+      background: var(--steel-700);
+      color: var(--steel-100);
+      padding: 10px 18px;
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid var(--steel-500);
+      margin-bottom: 12px;
+    }
+
+    .photo-upload-btn:hover {
+      background: var(--steel-500);
+    }
+
+    .image-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 12px;
+      width: 95%;
+      margin-top: 10px;
+    }
+
+    .preview-thumb {
+      position: relative;
+      width: 100%;
+      height: 100px;
+      border: 1px solid var(--steel-500);
+      background-size: cover;
+      background-position: center;
+    }
+
+    .preview-thumb .remove-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: var(--caution);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      font-size: 14px;
+      line-height: 20px;
+      text-align: center;
+      padding: 0;
+      cursor: pointer;
+    }
+
     .actions {
       display: flex;
       justify-content: space-between;
@@ -465,6 +518,17 @@
         <label><span class="num">07</span>Reported by</label>
         <input type="text" id="reportedBy" placeholder="QA-Technician, Lead-Technician or Operator's name">
       </div>
+
+      <!-- Section 08: Photo Documentation -->
+      <div class="field">
+        <label><span class="num">08</span>Photo Documentation</label>
+        <label class="photo-upload-btn">
+          Take / Add Image(s)
+          <input type="file" id="photoInput" accept="image/*" capture="environment" multiple style="display:none;">
+        </label>
+        <div class="hint">Tap button to use camera or select existing photos.</div>
+        <div class="image-preview-grid" id="imagePreviewGrid"></div>
+      </div>
     </form>
 
     <div class="actions">
@@ -477,8 +541,53 @@
   </div>
 
   <script>
+    // ---------- Image Handling Array ----------
+    let attachedPhotos = []; // Array of { dataUrl, format }
+
+    const photoInput = document.getElementById('photoInput');
+    const imagePreviewGrid = document.getElementById('imagePreviewGrid');
+
+    photoInput.addEventListener('change', function (e) {
+      const files = Array.from(e.target.files);
+      files.forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+          const dataUrl = evt.target.result;
+          const format = file.type.includes('png') ? 'PNG' : 'JPEG';
+          attachedPhotos.push({ dataUrl, format });
+          renderPhotoPreviews();
+        };
+        reader.readAsDataURL(file);
+      });
+      // reset input so picking the same file again triggers change event
+      this.value = '';
+    });
+
+    function renderPhotoPreviews() {
+      imagePreviewGrid.innerHTML = '';
+      attachedPhotos.forEach((photo, index) => {
+        const thumb = document.createElement('div');
+        thumb.className = 'preview-thumb';
+        thumb.style.backgroundImage = `url(${photo.dataUrl})`;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.type = 'button';
+        removeBtn.onclick = (e) => {
+          e.stopPropagation();
+          attachedPhotos.splice(index, 1);
+          renderPhotoPreviews();
+        };
+
+        thumb.appendChild(removeBtn);
+        imagePreviewGrid.appendChild(thumb);
+      });
+    }
+
     // ---------- LNG/STD restriction handling ----------
-    const lngModels = ['130', '145', '160', '200', '210', '230', '300', '350', '470', '510'];
+    const lngModels = ['130', '145', '160', '200', '210', '230', '300', '350', '380', '510'];
     const modelSelect = document.getElementById('model');
     const variantSelect = document.getElementById('variant');
     const optLng = document.getElementById('optLng');
@@ -656,6 +765,16 @@
       return name.replace(/[\\/:*?"<>|]/g, '-').trim() || 'unspecified';
     }
 
+    // Helper to load HTML Image asynchronously to derive physical dimensions
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+
     // ---------- PDF Generation ----------
     document.getElementById('downloadBtn').addEventListener('click', async () => {
       const { jsPDF } = window.jspdf;
@@ -743,11 +862,14 @@
       const systemVal = get('system');
       const armCellVal = get('armCell');
       const boomCellVal = get('boomCell');
+      const boomRobotVal = get('boomRobot');
       const mainFrameCellVal = get('mainFrameCell');
       const trackFrameCellVal = get('trackFrameCell');
       let systemDisplay = systemVal || '—';
       if (systemVal === 'Arm' && armCellVal) systemDisplay = `Arm — Cell ${armCellVal}`;
-      if (systemVal === 'Boom' && boomCellVal) systemDisplay = `Boom — Cell ${boomCellVal}`;
+      if (systemVal === 'Boom' && boomCellVal) {
+        systemDisplay = `Boom — Cell ${boomCellVal}` + (boomRobotVal ? ` (${boomRobotVal})` : '');
+      }
       if (systemVal === 'Main Frame' && mainFrameCellVal) systemDisplay = `Main Frame — Cell ${mainFrameCellVal}`;
       if (systemVal === 'Track Frame' && trackFrameCellVal) systemDisplay = `Track Frame — Cell ${trackFrameCellVal}`;
       section('03', 'WHAT SYSTEM WAS IT RUN IN?', systemDisplay);
@@ -764,6 +886,49 @@
       if (isolated === 'No') {
         section('', 'WHEN DID THE ISSUE BEGIN?', get('beganWhen'));
         section('', 'CLUES AT ONSET POINT', get('onsetClues'));
+      }
+
+      section('07', 'REPORTED BY', get('reportedBy'));
+
+      // --- Section 08: Render Attached Photos onto PDF ---
+      if (attachedPhotos.length > 0) {
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(200, 70, 27);
+        doc.text('08', margin, y);
+        doc.setTextColor(90, 107, 116);
+        doc.text('PHOTO DOCUMENTATION', margin + 22, y);
+        y += 20;
+
+        const maxImgWidth = (usableWidth - 16) / 2; // 2 photos per row
+        const maxImgHeight = 160;
+
+        for (let i = 0; i < attachedPhotos.length; i += 2) {
+          if (y + maxImgHeight > 740) {
+            doc.addPage();
+            y = 60;
+          }
+
+          const photo1 = attachedPhotos[i];
+          const img1 = await loadImage(photo1.dataUrl);
+          let ratio1 = Math.min(maxImgWidth / img1.width, maxImgHeight / img1.height);
+          let w1 = img1.width * ratio1;
+          let h1 = img1.height * ratio1;
+
+          doc.addImage(photo1.dataUrl, photo1.format, margin, y, w1, h1);
+
+          if (i + 1 < attachedPhotos.length) {
+            const photo2 = attachedPhotos[i + 1];
+            const img2 = await loadImage(photo2.dataUrl);
+            let ratio2 = Math.min(maxImgWidth / img2.width, maxImgHeight / img2.height);
+            let w2 = img2.width * ratio2;
+            let h2 = img2.height * ratio2;
+
+            doc.addImage(photo2.dataUrl, photo2.format, margin + maxImgWidth + 16, y, w2, h2);
+          }
+
+          y += Math.max(h1, (i + 1 < attachedPhotos.length) ? maxImgHeight : h1) + 16;
+        }
       }
 
       const cellVal = armCellVal || boomCellVal || mainFrameCellVal || trackFrameCellVal;
