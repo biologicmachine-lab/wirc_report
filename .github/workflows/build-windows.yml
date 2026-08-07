@@ -2,8 +2,14 @@ name: Build Windows App
 
 on:
   push:
+    branches:
+      - main
     tags:
-      - 'v*' # Triggers whenever pushinga tag like v1.0.0
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-windows:
@@ -17,13 +23,46 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cahe: 'npm'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Windows Executable
-        uses: samuelmeuli/action-electron-builder@v1
+      - name: Decode Windows Certificate
+        if: ${{ secrets.WIN_CSC_LINK != '' }}
+        shell: pwsh
+        run: |
+          [System.Convert]::FromBase64String("${{ secrets.WIN_CSC_LINK }}") | Set-Content -Path "win-cert.pfx" -AsByteStream
+
+      - name: Build and sign Windows executable
+        env:
+          CSC_LINK: ${{ github.workspace }}\win-cert.pfx
+          CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run dist:win
+
+      - name: Clean Certificate
+        if: always()
+        shell: pwsh
+        run: Remove-Item -Path "win-cert.pfx" -ErrorAction SilentlyContinue
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          release: true
+          name: windows-build
+          path: |
+            dist/**/*.exe
+            dist/**/*.msi
+            dist/**/*.zip
+            dist/**/*.blockmap
+          if-no-files-found: warn
+
+      - name: Publish Windows assets to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/**/*.exe
+            dist/**/*.msi
+            dist/**/*.zip
+            dist/**/*.blockmap

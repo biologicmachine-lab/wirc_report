@@ -526,6 +526,9 @@
           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('photoInput').click();}">
           Take / Add Image(s)
           <input type="file" id="photoInput" accept="image/png,image/jpeg" capture="environment" multiple style="display:none;">
+        <label class="photo-upload-btn">
+          Take / Add Image(s)
+          <input type="file" id="photoInput" accept="image/*" capture="environment" multiple style="display:none;">
         </label>
         <div class="hint">Tap button to use camera or select existing photos.</div>
         <div class="image-preview-grid" id="imagePreviewGrid"></div>
@@ -568,6 +571,15 @@
         reader.onload = function (evt) {
           const dataUrl = evt.target.result;
           const format = file.type === 'image/png' ? 'PNG' : 'JPEG';
+
+    photoInput.addEventListener('change', function (e) {
+      const files = Array.from(e.target.files);
+      files.forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+          const dataUrl = evt.target.result;
+          const format = file.type.includes('png') ? 'PNG' : 'JPEG';
           attachedPhotos.push({ dataUrl, format });
           renderPhotoPreviews();
         };
@@ -582,6 +594,7 @@
         const thumb = document.createElement('div');
         thumb.className = 'preview-thumb';
         thumb.style.backgroundImage = `url("${photo.dataUrl}")`;
+        thumb.style.backgroundImage = `url(${photo.dataUrl})`;
 
         const removeBtn = document.createElement('button');
         removeBtn.className = 'remove-btn';
@@ -936,6 +949,25 @@
           }
 
           y += Math.max(h1, h2) + 16;
+          const photo1 = attachedPhotos[i];
+          const img1 = await loadImage(photo1.dataUrl);
+          let ratio1 = Math.min(maxImgWidth / img1.width, maxImgHeight / img1.height);
+          let w1 = img1.width * ratio1;
+          let h1 = img1.height * ratio1;
+
+          doc.addImage(photo1.dataUrl, photo1.format, margin, y, w1, h1);
+
+          if (i + 1 < attachedPhotos.length) {
+            const photo2 = attachedPhotos[i + 1];
+            const img2 = await loadImage(photo2.dataUrl);
+            let ratio2 = Math.min(maxImgWidth / img2.width, maxImgHeight / img2.height);
+            let w2 = img2.width * ratio2;
+            let h2 = img2.height * ratio2;
+
+            doc.addImage(photo2.dataUrl, photo2.format, margin + maxImgWidth + 16, y, w2, h2);
+          }
+
+          y += Math.max(h1, (i + 1 < attachedPhotos.length) ? maxImgHeight : h1) + 16;
         }
       }
 
