@@ -522,9 +522,10 @@
       <!-- Section 08: Photo documentation -->
       <div class="field">
         <label><span class="num">08</span>Photo Documentation</label>
-        <label class="photo-upload-btn">
+        <label class="photo-upload-btn" tabindex="0" role="button"
+          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('photoInput').click();}">
           Take / Add Image(s)
-          <input type="file" id="photoInput" accept="image/*" capture="environment" multiple style="display:none;">
+          <input type="file" id="photoInput" accept="image/png,image/jpeg" capture="environment" multiple style="display:none;">
         </label>
         <div class="hint">Tap button to use camera or select existing photos.</div>
         <div class="image-preview-grid" id="imagePreviewGrid"></div>
@@ -549,12 +550,13 @@
 
     photoInput.addEventListener('change', function (e) {
       const files = Array.from(e.target.files);
+      const SUPPORTED_TYPES = ['image/png', 'image/jpeg'];
       files.forEach(file => {
-        if (!file.type.startsWith('image/')) return;
+        if (!SUPPORTED_TYPES.includes(file.type)) return;
         const reader = new FileReader();
         reader.onload = function (evt) {
           const dataUrl = evt.target.result;
-          const format = file.type.includes('png') ? 'PNG' : 'JPEG';
+          const format = file.type === 'image/png' ? 'PNG' : 'JPEG';
           attachedPhotos.push({ dataUrl, format });
           renderPhotoPreviews();
         };
@@ -896,22 +898,29 @@
             y = 60;
           }
 
-          const photo1 = attachedPhotos[i];
-          const img1 = await loadImage(photo1.dataUrl);
-          let ratio1 = Math.min(maxImgWidth / img1.width, maxImgHeight / img1.height);
-          let w1 = img1.width * ratio1;
-          let h1 = img1.height * ratio1;
-
-          doc.addImage(photo1.dataUrl, photo1.format, margin, y, w1, h1);
+          let h1 = 0;
+          try {
+            const photo1 = attachedPhotos[i];
+            const img1 = await loadImage(photo1.dataUrl);
+            let ratio1 = Math.min(maxImgWidth / img1.width, maxImgHeight / img1.height);
+            let w1 = img1.width * ratio1;
+            h1 = img1.height * ratio1;
+            doc.addImage(photo1.dataUrl, photo1.format, margin, y, w1, h1);
+          } catch (e) {
+            console.warn('Could not render photo at index', i, e);
+          }
 
           if (i + 1 < attachedPhotos.length) {
-            const photo2 = attachedPhotos[i + 1];
-            const img2 = await loadImage(photo2.dataUrl);
-            let ratio2 = Math.min(maxImgWidth / img2.width, maxImgHeight / img2.height);
-            let w2 = img2.width * ratio2;
-            let h2 = img2.height * ratio2;
-
-            doc.addImage(photo2.dataUrl, photo2.format, margin + maxImgWidth + 16, y, w2, h2);
+            try {
+              const photo2 = attachedPhotos[i + 1];
+              const img2 = await loadImage(photo2.dataUrl);
+              let ratio2 = Math.min(maxImgWidth / img2.width, maxImgHeight / img2.height);
+              let w2 = img2.width * ratio2;
+              let h2 = img2.height * ratio2;
+              doc.addImage(photo2.dataUrl, photo2.format, margin + maxImgWidth + 16, y, w2, h2);
+            } catch (e) {
+              console.warn('Could not render photo at index', i + 1, e);
+            }
           }
 
           y += Math.max(h1, (i + 1 < attachedPhotos.length) ? maxImgHeight : h1) + 16;
