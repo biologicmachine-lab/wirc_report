@@ -570,7 +570,7 @@
       attachedPhotos.forEach((photo, index) => {
         const thumb = document.createElement('div');
         thumb.className = 'preview-thumb';
-        thumb.style.backgroundImage = `url(${photo.dataUrl})`;
+        thumb.style.backgroundImage = `url("${photo.dataUrl}")`;
 
         const removeBtn = document.createElement('button');
         removeBtn.className = 'remove-btn';
@@ -910,20 +910,21 @@
             console.warn('Could not render photo at index', i, e);
           }
 
+          let h2 = 0;
           if (i + 1 < attachedPhotos.length) {
             try {
               const photo2 = attachedPhotos[i + 1];
               const img2 = await loadImage(photo2.dataUrl);
               let ratio2 = Math.min(maxImgWidth / img2.width, maxImgHeight / img2.height);
               let w2 = img2.width * ratio2;
-              let h2 = img2.height * ratio2;
+              h2 = img2.height * ratio2;
               doc.addImage(photo2.dataUrl, photo2.format, margin + maxImgWidth + 16, y, w2, h2);
             } catch (e) {
               console.warn('Could not render photo at index', i + 1, e);
             }
           }
 
-          y += Math.max(h1, (i + 1 < attachedPhotos.length) ? maxImgHeight : h1) + 16;
+          y += Math.max(h1, h2) + 16;
         }
       }
 
