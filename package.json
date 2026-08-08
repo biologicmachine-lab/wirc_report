@@ -4,7 +4,10 @@
   "main": "index.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win"
+    "build": "echo 'No extra compilation step required'",
+    "dist": "electron-builder --win",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac"
   },
   "build": {
     "appId": "com.wirc.report",
@@ -13,6 +16,12 @@
       "target": [
         "nsis",
         "portable"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
       ]
     },
     "nsis": {
