@@ -30,3 +30,12 @@ jobs:
         run: npm run dist:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wirc-report-windows
+          path: |
+            dist/*.exe
+            dist/*.blockmap
+          retention-days: 30
